@@ -8,14 +8,11 @@ def transform_weather_data(data):
     transformed = {}
 
     try:
-        # Zaman formatını datetime'a çevir
         transformed["time"] = datetime.strptime(data["time"], "%Y-%m-%dT%H:%M")
 
-        # Sıcaklık ve rüzgar hızı float olsun
-        transformed["temperature"] = float(data["temperature"])
+        transformed["temperature"] = float(data["temperature"]) # float
         transformed["wind_speed"] = float(data["wind_speed"])
 
-        # Rüzgar kategorisi: basit feature engineering
         wind = transformed["wind_speed"]
         if wind < 5:
             transformed["wind_category"] = "light"
