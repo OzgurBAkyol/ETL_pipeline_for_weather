@@ -1,15 +1,18 @@
+import os
 import multiprocessing
 import time
-from extract_api import run_flask
-from load import save_weather_from_api
 import requests
+from extract import run_flask
+from load import save_weather_from_api
+
+API_URL = os.getenv("WEATHER_API_URL", "http://127.0.0.1:5000/weather")
+FLASK_STARTUP_DELAY = int(os.getenv("FLASK_STARTUP_DELAY", 5))
 
 def check_api():
-    test_url = "http://127.0.0.1:5000/weather"
     try:
-        response = requests.get(test_url)
+        response = requests.get(API_URL)
         return response.status_code == 200
-    except Exception:
+    except requests.exceptions.RequestException:
         return False
 
 if __name__ == "__main__":
@@ -17,10 +20,10 @@ if __name__ == "__main__":
     flask_process.start()
 
     print("[INFO] Flask API başlatılıyor...")
-    time.sleep(5)
+    time.sleep(FLASK_STARTUP_DELAY)
 
     if not check_api():
-        print("[ERROR] Flask API başlatılamadı.")
+        print(f"[ERROR] Flask API {API_URL} başlatılamadı.")
         flask_process.terminate()
         exit()
 

@@ -1,18 +1,23 @@
+import os
 import requests
 from flask import Flask, jsonify
 
 app = Flask(__name__)
 
+API_URL = os.getenv("WEATHER_API_URL", "https://api.open-meteo.com/v1/forecast")
+LATITUDE = float(os.getenv("LATITUDE", 39.7767))  # Eskişehir
+LONGITUDE = float(os.getenv("LONGITUDE", 30.5206))
+FLASK_PORT = int(os.getenv("FLASK_PORT", 5000))
+
 def get_weather():
-    url = "https://api.open-meteo.com/v1/forecast"
     params = {
-        "latitude": 39.7767,  # Eskişehir
-        "longitude": 30.5206,
+        "latitude": LATITUDE,
+        "longitude": LONGITUDE,
         "current_weather": "true"
     }
 
     try:
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.get(API_URL, params=params, timeout=10)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         return {"error": f"Request failed: {e}"}
@@ -33,8 +38,8 @@ def weather_api():
     return jsonify(get_weather())
 
 def run_flask():
-    print("[INFO] Starting Flask API...")
-    app.run(debug=True, use_reloader=False, port=5000)
+    print(f"[INFO] Starting Flask API on port {FLASK_PORT}...")
+    app.run(debug=True, use_reloader=False, port=FLASK_PORT)
 
 if __name__ == '__main__':
     run_flask()

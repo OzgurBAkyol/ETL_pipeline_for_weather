@@ -1,15 +1,18 @@
+import os
 import psycopg
 import requests
 from datetime import datetime
 from transform import transform_weather_data
 
 DB_CONFIG = {
-    "dbname": "postgres",
-    "user": "postgres",
-    "password": "7991",
-    "host": "localhost",
-    "port": "5432"
+    "dbname": os.getenv("DB_NAME", "postgres"),
+    "user": os.getenv("DB_USER", "postgres"),
+    "password": os.getenv("DB_PASSWORD", "****"),
+    "host": os.getenv("DB_HOST", "******"),
+    "port": os.getenv("DB_PORT", "****")
 }
+
+API_URL = os.getenv("WEATHER_API_URL", "http://127.0.0.1:5000/weather")
 
 def init_db():
     with psycopg.connect(**DB_CONFIG) as conn:
@@ -25,27 +28,28 @@ def init_db():
             conn.commit()
 
 def save_weather_from_api():
-    url = "http://127.0.0.1:5000/weather"
     try:
-        response = requests.get(url, timeout=5)
+        response = requests.get(API_URL, timeout=5)
         response.raise_for_status()
-    except Exception as e:
-        print("API bağlantı hatası:", e)
+    except requests.exceptions.RequestException as e:
+        print(f"API bağlantı hatası: {e}")
         return
 
     weather_data = response.json()
 
     if "error" in weather_data:
-        print("API Hatası:", weather_data["error"])
+        print(f"API Hatası: {weather_data['error']}")
         return
 
     transformed_data = transform_weather_data(weather_data)
 
-    try:
-        weather_time = datetime.strptime(transformed_data['time'], "%Y-%m-%dT%H:%M")
-    except Exception as e:
-        print("Zaman formatı hatalı:", e)
-        return
+    weather_time = transformed_data['time']
+    if isinstance(weather_time, str):
+        try:
+            weather_time = datetime.strptime(weather_time, "%Y-%m-%dT%H:%M")
+        except ValueError as e:
+            print(f"Zaman formatı hatalı: {e}")
+            return
 
     with psycopg.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
